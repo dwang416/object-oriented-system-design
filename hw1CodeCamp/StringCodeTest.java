@@ -61,6 +61,13 @@ public class StringCodeTest extends TestCase {
 		assertEquals(3, StringCode.maxRun("1112233"));
 	}
 
-	// Need test cases for stringIntersect
+	// 
+	// stringIntersect
+	//
+	public void testStringIntersect() {
+		assertEquals(true, StringCode.stringIntersect("abcdef", "axxxcdeyy6f", 3));
+		assertEquals(true, StringCode.stringIntersect("abcdef", "axxxcdeyy6f", 2));
+		assertEquals(false, StringCode.stringIntersect("abcdef", "axxxcdeyy6f", 4));
+	}
 	
 }
