@@ -9,7 +9,7 @@ import java.util.*;
 */
 
 public class Shape {
-	private ArrayList<Point> data;
+	private ArrayList<Point> data = new ArrayList<>();
 	private Point center;
 	// radius of center of the circle defined by shape
 	private double radius = Double.MAX_VALUE;	
@@ -35,7 +35,7 @@ public class Shape {
 		}
 		double x, y;
 		double sumX = 0.0, sumY = 0.0;
-		for (int i = 1; i < coordinates.length; i++) {
+		for (int i = 1; i < coordinates.length; i += 2) {
 			x = Double.parseDouble(coordinates[i-1]);
 			y = Double.parseDouble(coordinates[i]);
 			sumX += x;
@@ -59,7 +59,7 @@ public class Shape {
 	 * @param other: another Shape object
 	 * @return true if this shape crosses the other
 	 */
-	public boolean cross(Shape other) {
+	public boolean crosses(Shape other) {
 		Point otherCenter = other.getCenter();
 		double otherRadius = other.getRadius();
 		for (int i = 0; i < getPointCount()-1; i++) {
@@ -67,7 +67,9 @@ public class Shape {
 			Point a2 = data.get(i+1);
 			boolean a1InOther = a1.distance(otherCenter) <= otherRadius;
 			boolean a2InOther = a2.distance(otherCenter) <= otherRadius;
-			if (a1InOther ^ a2InOther) return true;	// XOR operation
+			if (a1InOther ^ a2InOther) {
+				return true;	// XOR operation
+			}
 		}
 		return false;
 	}

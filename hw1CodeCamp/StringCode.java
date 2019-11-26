@@ -62,7 +62,7 @@ public class StringCode {
 	 */
 	public static boolean stringIntersect(String a, String b, int len) {
 		if (a.length() < len || b.length() < len) return false;
-		HashSet<String> set = new HashSet<>();
+		Set<String> set = new HashSet<>();
 		for (int i = 0; i < a.length() - len + 1; i++) {
 			set.add(a.substring(i, i+len));
 		}
