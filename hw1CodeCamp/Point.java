@@ -54,7 +54,7 @@ public class Point {
 	}
 	
 	/**
-	 * Returns the distance between this point an another.
+	 * Returns the distance between this point and another.
 	 * @param other
 	 * @return distance to other point
 	 */
