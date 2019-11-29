@@ -13,19 +13,28 @@ public class PieceTest extends TestCase {
 	// For example, the code below sets up some
 	// pyramid and s pieces in instance variables
 	// that can be used in tests.
-	private Piece pyr1, pyr2, pyr3, pyr4;
+	private Piece pyr1, pyr2, pyr3, pyr4, pyr5;
+	private Piece l11, l12, l13, l14, l15;
 	private Piece s, sRotated;
 
 	protected void setUp() throws Exception {
 		super.setUp();
+		Piece[] pieces = Piece.getPieces();
 		
 		pyr1 = new Piece(Piece.PYRAMID_STR);
 		pyr2 = pyr1.computeNextRotation();
 		pyr3 = pyr2.computeNextRotation();
 		pyr4 = pyr3.computeNextRotation();
+		pyr5 = pyr4.computeNextRotation();
 		
 		s = new Piece(Piece.S1_STR);
 		sRotated = s.computeNextRotation();
+		
+		l11 = pieces[1];
+		l12 = l11.getNext();
+		l13 = l12.getNext();
+		l14 = l13.getNext();
+		l15 = l14.getNext();
 	}
 	
 	// Here are some sample tests to get you started
@@ -41,9 +50,17 @@ public class PieceTest extends TestCase {
 		assertEquals(3, pyr2.getHeight());
 		
 		// Now try with some other piece, made a different way
-		Piece l = new Piece(Piece.STICK_STR);
-		assertEquals(1, l.getWidth());
-		assertEquals(4, l.getHeight());
+		Piece stick = new Piece(Piece.STICK_STR);
+		assertEquals(1, stick.getWidth());
+		assertEquals(4, stick.getHeight());
+		
+		//assertEquals(4, stick.getNext().getWidth());
+		//assertEquals(1, stick.getNext().getHeight());
+		
+		assertEquals(2, l11.getWidth());
+		assertEquals(3, l11.getHeight());
+		assertEquals(3, l12.getWidth());
+		assertEquals(2, l12.getHeight());
 	}
 	
 	
@@ -58,5 +75,9 @@ public class PieceTest extends TestCase {
 		assertTrue(Arrays.equals(new int[] {1, 0}, sRotated.getSkirt()));
 	}
 	
+	public void testRotationCircle() {
+		assertEquals(l11, l15);
+		assertEquals(pyr1, pyr5);
+	}
 	
 }
