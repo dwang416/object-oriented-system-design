@@ -16,6 +16,8 @@ public class PieceTest extends TestCase {
 	private Piece pyr1, pyr2, pyr3, pyr4, pyr5;
 	private Piece l11, l12, l13, l14, l15;
 	private Piece s, sRotated;
+	private Piece stick, stickFast;
+	private Piece square;
 
 	protected void setUp() throws Exception {
 		super.setUp();
@@ -35,6 +37,12 @@ public class PieceTest extends TestCase {
 		l13 = l12.getNext();
 		l14 = l13.getNext();
 		l15 = l14.getNext();
+		
+
+		stick = new Piece(Piece.STICK_STR);
+		stickFast = pieces[0];
+		
+		square = pieces[5];
 	}
 	
 	// Here are some sample tests to get you started
@@ -50,12 +58,13 @@ public class PieceTest extends TestCase {
 		assertEquals(3, pyr2.getHeight());
 		
 		// Now try with some other piece, made a different way
-		Piece stick = new Piece(Piece.STICK_STR);
 		assertEquals(1, stick.getWidth());
 		assertEquals(4, stick.getHeight());
-		
-		//assertEquals(4, stick.getNext().getWidth());
-		//assertEquals(1, stick.getNext().getHeight());
+
+		assertEquals(1, stickFast.getWidth());
+		assertEquals(4, stickFast.getHeight());
+		assertEquals(4, stickFast.getNext().getWidth());
+		assertEquals(1, stickFast.getNext().getHeight());
 		
 		assertEquals(2, l11.getWidth());
 		assertEquals(3, l11.getHeight());
@@ -78,6 +87,7 @@ public class PieceTest extends TestCase {
 	public void testRotationCircle() {
 		assertEquals(l11, l15);
 		assertEquals(pyr1, pyr5);
+		assertEquals(square, square.getNext());
 	}
 	
 }
