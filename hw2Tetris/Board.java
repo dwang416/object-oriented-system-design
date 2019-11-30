@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 // Board.java
 
 /**
@@ -16,6 +18,11 @@ public class Board	{
 	private boolean DEBUG = true;
 	boolean committed;
 	
+	private int[] widths;	// stores how many filled spots there are in each row
+	private int[] heights;	// stores the height to which each column has been filled
+	
+	private int maxHeight;	// stores the maximum column height, 
+							// updated when place() or clearRows called
 	
 	// Here a few trivial methods are provided:
 	
@@ -29,7 +36,13 @@ public class Board	{
 		grid = new boolean[width][height];
 		committed = true;
 		
-		// YOUR CODE HERE
+		// widths and heights are updated when place() or clearRows called
+		widths = new int[height];
+		heights = new int[width];
+		Arrays.fill(widths, 0);
+		Arrays.fill(heights, 0);
+		
+		maxHeight = 0;
 	}
 	
 	
@@ -54,7 +67,7 @@ public class Board	{
 	 For an empty board this is 0.
 	*/
 	public int getMaxHeight() {	 
-		return 0; // YOUR CODE HERE
+		return maxHeight;
 	}
 	
 	
@@ -75,10 +88,16 @@ public class Board	{
 	 
 	 <p>
 	 Implementation: use the skirt and the col heights
-	 to compute this fast -- O(skirt length).
+	 to compute this fast -- O(skirt length) time complexity.
 	*/
 	public int dropHeight(Piece piece, int x) {
-		return 0; // YOUR CODE HERE
+		int[] skirt = piece.getSkirt();
+		int imax = x;	// assume piece and columns contact at col x
+		for (int i = 1; i < skirt.length;i ++) {
+			if (getColumnHeight(imax) - getColumnHeight(i)
+					< skirt[imax-x] - skirt[i]) imax = x + i;
+		}
+		return heights[imax] + 1 - skirt[imax-x];
 	}
 	
 	
@@ -88,7 +107,7 @@ public class Board	{
 	 The height is 0 if the column contains no blocks.
 	*/
 	public int getColumnHeight(int x) {
-		return 0; // YOUR CODE HERE
+		return heights[x];
 	}
 	
 	
@@ -97,7 +116,7 @@ public class Board	{
 	 the given row.
 	*/
 	public int getRowWidth(int y) {
-		 return 0; // YOUR CODE HERE
+		 return widths[y];
 	}
 	
 	
@@ -107,7 +126,8 @@ public class Board	{
 	 always return true.
 	*/
 	public boolean getGrid(int x, int y) {
-		return false; // YOUR CODE HERE
+		if (x < 0 || x >= width || y < 0 || y >= height) return true;
+		return grid[x][y];
 	}
 	
 	
@@ -148,7 +168,23 @@ public class Board	{
 	*/
 	public int clearRows() {
 		int rowsCleared = 0;
-		// YOUR CODE HERE
+		for (int j = 0; j < height; j++) {
+			if (widths[j] == 0) break;	// all empty rows above from j
+			if (widths[j] == width) {	// is full row, cleared
+				rowsCleared++;
+				clearRow(j);
+				widths[j] = 0;	// defensive, in case rows above j are all empty
+				for (int i = 0; i < width; i++) heights[i]--;
+				maxHeight--;
+			}
+			else if (rowsCleared > 0) {	// shift down
+				copyRow(j-rowsCleared, j);
+				clearRow(j);
+				widths[j-rowsCleared] = widths[j];
+				widths[j] = 0;
+			}
+		}
+		
 		sanityCheck();
 		return rowsCleared;
 	}
@@ -194,6 +230,25 @@ public class Board	{
 		}
 		for (int x=0; x<width+2; x++) buff.append('-');
 		return(buff.toString());
+	}
+	
+	/**
+	 * helper method for clearRows(), fill row j with all false
+	 * @param j: row j to be cleared
+	 */
+	private void clearRow(int j) {
+		for (int i = 0; i < width; i++) grid[i][j] = false;
+	}
+	
+	/**
+	 * helper method for clearRows(),  copy the values of row j2 into j1
+	 * @param j1: row to be copied into (lower row in board)
+	 * @param j2: row to be copied from (higher row in board)
+	 */
+	private void copyRow(int j1, int j2) {
+		for (int i = 0; i < width; i++) {
+			grid[i][j1] = grid[i][j2];
+		}
 	}
 }
 
