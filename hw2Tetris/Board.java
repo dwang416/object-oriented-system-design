@@ -22,9 +22,13 @@ public class Board	{
 	private int[] heights;	// stores the height to which each column has been filled
 	
 	private int maxHeight;	// stores the maximum column height, 
-							// updated when place() or clearRows called
+							// updated when place() or clearRows() called
 	
-	// Here a few trivial methods are provided:
+	// variables for backup (for undo())
+	private boolean[][] xGrid;
+	private int[] xWidths;
+	private int[] xHeights;
+	private int xMaxHeight;
 	
 	/**
 	 Creates an empty board of the given width and height
@@ -43,6 +47,12 @@ public class Board	{
 		Arrays.fill(heights, 0);
 		
 		maxHeight = 0;
+		
+		// initialization for backup variables
+		xGrid = new boolean[width][height];
+		xWidths = new int[height];
+		xHeights = new int[width];
+		xMaxHeight = 0;
 	}
 	
 	
@@ -61,6 +71,14 @@ public class Board	{
 		return height;
 	}
 	
+	public int[] getWidths() {
+		return widths;
+	}
+	
+	public int[] getHeights() {
+		return heights;
+	}
+	
 	
 	/**
 	 Returns the max column height present in the board.
@@ -77,7 +95,48 @@ public class Board	{
 	*/
 	public void sanityCheck() {
 		if (DEBUG) {
-			// YOUR CODE HERE
+			int[] checkWidths = new int[height];
+			int[] checkHeights = new int[width];
+			int checkMaxHeight = 0;
+			for (int i = 0; i < width; i++) {
+				for (int j = 0; j < height; j++) {
+					if (grid[i][j]) {
+						checkWidths[j]++;
+						checkHeights[i] = j+1;
+					}
+				}
+				checkMaxHeight = Math.max(checkMaxHeight, checkHeights[i]);
+			}
+			
+			StringBuilder desc = new StringBuilder();
+			desc.append("\nchecking heights:\n");
+			String prep;
+			boolean notSane = false;
+			for (int i = 0; i < width; i++) {
+				if (heights[i] == checkHeights[i]) prep = " and ";
+				else {
+					prep = " but ";
+					notSane = true;
+				}
+				desc.append("column " + i + " should be " + heights[i] + prep + "it is " + checkHeights[i] + "\n");
+			}
+			desc.append("checking widths:\n");
+			for (int j = 0; j < height; j++) {
+				if (widths[j] == checkWidths[j]) prep = " and ";
+				else {
+					prep = " but ";
+					notSane = true;
+				}
+				desc.append("row " + j + " should be " + widths[j] + prep + "it is " + checkWidths[j] + "\n");
+			}
+			desc.append("checking maxHeight:\n");
+			prep = (maxHeight == checkMaxHeight) ? " and " : " but ";
+			desc.append("maxHeight should be " + maxHeight + prep + "it is " + checkMaxHeight + "\n");
+			
+			if (notSane) {
+				System.out.println(this);
+				throw new RuntimeException(desc.toString());
+			}
 		}
 	}
 	
@@ -153,10 +212,37 @@ public class Board	{
 	public int place(Piece piece, int x, int y) {
 		// flag !committed problem
 		if (!committed) throw new RuntimeException("place commit problem");
+		
+		backup();
+		committed = false;
 			
 		int result = PLACE_OK;
 		
-		// YOUR CODE HERE
+		TPoint[] body = piece.getBody();
+		boolean flagClearRows = false;
+		int px, py;
+		for (TPoint p: body) {
+			px = x + p.x;
+			py = y + p.y;
+			
+			if (px < 0 || px >= width || py < 0 || py >= height) {
+				result = PLACE_OUT_BOUNDS;
+				continue;
+			} else if (grid[px][py]) {
+				if (result != PLACE_OUT_BOUNDS) result = PLACE_BAD;
+				continue;
+			}
+			
+			grid[px][py] = true;	// filled now
+			if (widths[py] == width-1) flagClearRows = true;
+			widths[py]++;
+			heights[px] = Math.max(heights[px], py+1);
+			maxHeight = Math.max(maxHeight, heights[px]);
+		}
+		
+		if (flagClearRows && result == PLACE_OK) result = PLACE_ROW_FILLED;
+		
+		if (result <= PLACE_ROW_FILLED) sanityCheck();
 		
 		return result;
 	}
@@ -167,14 +253,22 @@ public class Board	{
 	 things above down. Returns the number of rows cleared.
 	*/
 	public int clearRows() {
+		
+		if (committed) {
+			// just in case a client calls clearRows() without calling place() first
+			committed = false;
+			return 0;	// since place() hasn't been called, there should be no rows clearable
+		}
+			
+		
 		int rowsCleared = 0;
 		for (int j = 0; j < height; j++) {
 			if (widths[j] == 0) break;	// all empty rows above from j
 			if (widths[j] == width) {	// is full row, cleared
 				rowsCleared++;
-				clearRow(j);
 				widths[j] = 0;	// defensive, in case rows above j are all empty
-				for (int i = 0; i < width; i++) heights[i]--;
+				
+				clearRow(j);
 				maxHeight--;
 			}
 			else if (rowsCleared > 0) {	// shift down
@@ -185,21 +279,75 @@ public class Board	{
 			}
 		}
 		
+		for (int i = 0; i < width; i++) {
+			// heights[i]--; // wrong -> e.g. hole in between cleared row and rows below
+			// find the first true grid from the top
+			heights[i] = 0; // in case below for loop is not reached for any j
+			for (int j = height-1; j >= 0; j--) {
+				if (grid[i][j]) {
+					heights[i] = j + 1;
+					break;
+				}
+			}
+			
+			
+		}
+		
 		sanityCheck();
+		
 		return rowsCleared;
 	}
 
 
 
 	/**
-	 Reverts the board to its state before up to one place
+	 Reverts the board to its state before up to one place()
 	 and one clearRows();
+	 
+	 Strategy: arraycopy() for backup, and swap main and copy for undo()
+	 Implementations: 
+	 (1) do backup first in place() and clearRows(), note, we should only 
+	 	 perform backup if committed == true, otherwise it is meaningless to
+	 	 backup for an "unsaved" state 
+	 	 e.g. backup -> place() (-> NO NEED TO BACKUP HERE) -> clearRows() -> undo()
+	 	 actually only place() needs to call backup(), clearRows doesn't need to
+	 (2) swap the main and copy in an undo() call
+	 
 	 If the conditions for undo() are not met, such as
 	 calling undo() twice in a row, then the second undo() does nothing.
 	 See the overview docs.
 	*/
 	public void undo() {
-		// YOUR CODE HERE
+		if (committed) return;
+		
+		boolean[][] tmpGrid = grid;
+		int[] tmpWidths = widths;
+		int[] tmpHeights = heights;
+		int tmpMaxHeight = maxHeight;
+		
+		grid = xGrid;
+		widths = xWidths;
+		heights = xHeights;
+		maxHeight = xMaxHeight;
+		
+		xGrid = tmpGrid;
+		xWidths = tmpWidths;
+		xHeights = tmpHeights;
+		xMaxHeight = tmpMaxHeight;
+
+		sanityCheck();
+
+		commit();
+	}
+	
+	private void backup() {
+		if (!committed) return;
+		for (int i = 0; i < grid.length; i++) {
+			System.arraycopy(grid[i], 0, xGrid[i], 0, grid[0].length);
+		}
+		System.arraycopy(widths, 0, xWidths, 0, widths.length);
+		System.arraycopy(heights, 0, xHeights, 0, heights.length);
+		xMaxHeight = maxHeight;
 	}
 	
 	

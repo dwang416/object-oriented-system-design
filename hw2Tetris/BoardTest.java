@@ -51,5 +51,5 @@ public class BoardTest extends TestCase {
 	// place, clearRows, undo, place ... checking a few col/row/max
 	// numbers that the board looks right after the operations.
 	
-	
+	/**/
 }
