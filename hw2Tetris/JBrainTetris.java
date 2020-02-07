@@ -1,3 +1,4 @@
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -22,10 +23,12 @@ public class JBrainTetris extends JTetris {
 	protected JCheckBox brainButton;
 	protected boolean brainMode = false;
 	private DefaultBrain defaultBrain;
+	private int checkCount;	// used to detect when the JTetris.count variable has changed to know that a new piece is in play 
 	
 	JBrainTetris (int pixels) {
 		super(pixels);
 		defaultBrain = new DefaultBrain();
+		checkCount = count;
 	}
 	
 	private void enableButtons() {
@@ -51,7 +54,17 @@ public class JBrainTetris extends JTetris {
 		// if verb is DOWN and brainMode is on, then use brain to move first
 		
 		if (brainMode && verb == DOWN) {
-			your code here
+			//your code here
+			
+			if (checkCount < count) {
+				checkCount++;
+				board.undo();
+				int limitHeight = board.getHeight() - 4;
+				Brain.Move bestMove = defaultBrain.bestMove(board, currentPiece, limitHeight, null);
+				currentX = bestMove.x;
+				currentY = bestMove.y;
+				currentPiece = bestMove.piece;
+			}
 		}
 		
 		computeNewPosition(verb);
@@ -203,6 +216,7 @@ public class JBrainTetris extends JTetris {
 		testButton = new JCheckBox("Test sequence");
 		panel.add(testButton);
 		
+		// brain mode label
 		panel.add(new JLabel("Brain:"));
 		brainButton = new JCheckBox("Brain active");
 		panel.add(brainButton); 
@@ -211,13 +225,43 @@ public class JBrainTetris extends JTetris {
 		return panel;
 	}
 	
+	public static JFrame createFrame(JTetris tetris) {		
+		JFrame frame = new JFrame("Stanford Tetris with Brain");
+		JComponent container = (JComponent)frame.getContentPane();
+		container.setLayout(new BorderLayout());
+
+		// Install the passed in JTetris in the center.
+		container.add(tetris, BorderLayout.CENTER);
+		
+		// Create and install the panel of controls.
+		JComponent controls = tetris.createControlPanel();
+		container.add(controls, BorderLayout.EAST);
+		
+		// Add the quit button last so it's at the bottom
+		controls.add(Box.createVerticalStrut(12));
+		JButton quit = new JButton("Quit");
+		controls.add(quit);
+		JButton brain = new JButton("Brain");
+		controls.add(brain);
+		quit.addActionListener( new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.exit(0);
+			}
+		});
+		
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.pack();
+		
+		return frame;
+	}
+	
 	public static void main(String[] args) {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception ignored) { }
 		
 		JTetris tetris = new JBrainTetris(16);
-		JFrame frame = JTetris.createFrame(tetris);
+		JFrame frame = JBrainTetris.createFrame(tetris);
 		frame.setVisible(true);
 	}
 }
